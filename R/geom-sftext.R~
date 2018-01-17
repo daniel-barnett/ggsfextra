@@ -1,0 +1,114 @@
+
+geom_sftext <- function(mapping = aes(), data = NULL, stat = "sf",
+                    position = "identity", na.rm = FALSE, show.legend = NA,
+                    inherit.aes = TRUE, ...) {
+
+  # Automatically determin name of geometry column
+  if (!is.null(data) && is_sf(data)) {
+    geometry_col <- attr(data, "sf_column")
+  } else {
+    geometry_col <- "geometry"
+  }
+  if (is.null(mapping$geometry)) {
+    mapping$geometry <- as.name(geometry_col)
+  }
+
+  c(
+    layer(
+      geom = GeomSf,
+      data = data,
+      mapping = mapping,
+      stat = stat,
+      position = position,
+      show.legend = if (is.character(show.legend)) TRUE else show.legend,
+      inherit.aes = inherit.aes,
+      params = list(
+        na.rm = na.rm,
+        legend = if (is.character(show.legend)) show.legend else "polygon",
+        ...
+      )
+    ),
+    coord_sf(default = TRUE)
+  )
+}
+
+#' @export
+scale_type.sfc <- function(x) "identity"
+
+GeomSparkLine <- ggproto("GeomSf", Geom,
+                          required_aes = c("geometry",
+                                           "line_x", # THIS HAS TO BE LINE_X...
+                                           "line_y",
+                                           "group"),
+                          default_aes = aes(
+                              shape = NULL,
+                              colour = NULL,
+                              fill = NULL,
+                              size = NULL,
+                              linetype = 1,
+                              alpha = NA,
+                              fill_alpha = NA,
+                              stroke = 0.5
+                          ),
+                          
+                          draw_panel = function(data, panel_params, coord, legend = NULL) {
+                              if (!inherits(coord, "CoordSf")) {
+                                  stop("geom_sf() must be used with coord_sf()", call. = FALSE)
+                              }
+                              
+                                        # Need to refactor this to generate one grob per geometry type
+                              coord <- coord$transform(data, panel_params)
+
+                              ## Scale all lines to have the same ranges
+                              x.rng <- range(coord$line_x)
+                              y.rng <- range(coord$line_y)
+                              coord$line_x <- (coord$line_x - x.rng[1]) / (x.rng[2] - x.rng[1])
+                              coord$line_y <- (coord$line_y - y.rng[1]) / (y.rng[2] - y.rng[1])
+                              
+                              ## Size of each sparkline's viewport (in native)
+                              vp.width <- 0.05
+                              vp.height <- 0.025
+
+                              ## Extract out the position of each group's centroid and
+                              ## hence the bounding box of the line graph
+                              unique.points <- match(unique(coord$group), coord$group)
+                              curr.pos <- matrix(ncol = 6, nrow = length(unique.points)) 
+                              colnames(curr.pos) <- c("x", "y", "x0", "y0", "x1", "y1")
+                              curr.pos[, c("x", "y")] <- sf::st_coordinates(coord[unique.points, "geometry"])
+                              curr.pos[, "x0"] <- curr.pos[, "x"] - vp.width / 2
+                              curr.pos[, "y0"] <- curr.pos[, "y"] - vp.height / 2
+                              curr.pos[, "x1"] <- curr.pos[, "x"] + vp.width / 2
+                              curr.pos[, "y1"] <- curr.pos[, "y"] + vp.height / 2
+                              
+                              ## Make sure none of the bounding boxes overlap
+                              cent.coords <- as.matrix(ggrepel:::repel_boxes(
+                                                                     data_points = curr.pos[, c("x", "y")],
+                                                                     point_padding_x = 0.0,
+                                                                     point_padding_y = 0.0,
+                                                                     boxes = curr.pos[,3:6],
+                                                                     xlim = c(0, 1),
+                                                                     ylim = c(0, 1),
+                                                                     direction = "both"))
+                              
+                              ## Viewport of each line graph
+                              cent.vp <- apply(cent.coords, 1, function(row)
+                                  grid::viewport(row["x"], row["y"],
+                                           width =  vp.width, height = vp.height,
+                                           default.units = "native"))
+                              
+                              groups <- unique(coord$group)
+                              grobs <- lapply(1:length(groups), function(i) {
+                                  has.moved <- !isTRUE(all.equal(curr.pos[i, c("x", "y")],
+                                                                 cent.coords[i, c("x", "y")], tolerance = 0.01))
+                                  sf_sparkline2(coord[coord$group == groups[i], , drop = FALSE],
+                                               vp = cent.vp[[i]], has.moved = has.moved)
+                              })
+                              
+                              do.call(grid::gList, grobs)
+                          },
+                          
+                          draw_key = function(data, params, size) {
+                              data <- utils::modifyList(ggplot2:::default_aesthetics(params$legend), data)
+                              draw_key_path(data, params, size)
+                          }
+                         )
