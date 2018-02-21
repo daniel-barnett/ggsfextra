@@ -1,17 +1,18 @@
-
 geom_sftext <- function(mapping = aes(), data = NULL, stat = "sf",
                     position = "identity", na.rm = FALSE, show.legend = NA,
                     inherit.aes = TRUE, ...) {
 
   # Automatically determin name of geometry column
-  if (!is.null(data) && is_sf(data)) {
-    geometry_col <- attr(data, "sf_column")
-  } else {
-    geometry_col <- "geometry"
-  }
-  if (is.null(mapping$geometry)) {
-    mapping$geometry <- as.name(geometry_col)
-  }
+  ## if (!is.null(data) && is_sf(data)) {
+    ## geometry_col <- attr(data, "sf_column")
+  ## } else {
+    ## geometry_col <- "geometry"
+  ## }
+  ## if (is.null(mapping$geometry)) {
+    ## mapping$geometry <- as.name(geometry_col)
+  ## }
+
+    mapping$geometry <- as.name("geometry")
 
   c(
     layer(
@@ -20,11 +21,10 @@ geom_sftext <- function(mapping = aes(), data = NULL, stat = "sf",
       mapping = mapping,
       stat = stat,
       position = position,
-      show.legend = if (is.character(show.legend)) TRUE else show.legend,
+      show.legend = FALSE,
       inherit.aes = inherit.aes,
       params = list(
         na.rm = na.rm,
-        legend = if (is.character(show.legend)) show.legend else "polygon",
         ...
       )
     ),
@@ -46,6 +46,10 @@ GeomSfText <- ggproto("GeomSfText", Geom,
   draw_panel = function(data, panel_params, coord, parse = FALSE,
                         na.rm = FALSE, check_overlap = FALSE) {
     lab <- data$label
+    if (is.numeric(lab)) {
+        lab <- round(lab, 2)
+    }
+
     if (parse) {
       lab <- parse(text = as.character(lab))
     }
@@ -54,16 +58,20 @@ GeomSfText <- ggproto("GeomSfText", Geom,
     if (is.character(data$vjust)) {
       data$vjust <- compute_just(data$vjust, data$y)
     }
+
     if (is.character(data$hjust)) {
       data$hjust <- compute_just(data$hjust, data$x)
     }
 
     text.coords <- sf::st_coordinates(data$geometry)
 
-    textGrob(lab, text.coords[, "X"], text.coords[, "Y"], default.units = "native", 
+    col.bright <- apply(col2rgb(data$colour), 2,
+                        function(x) sqrt(0.241 * x[1]^2 + 0.691*x[2]^2 + 0.068*x[3]^2))
+    data$colour <- ifelse(col.bright < 130, "gray90", "gray10")
+    grid::textGrob(lab, text.coords[, "X"], text.coords[, "Y"], default.units = "native",
                  hjust = data$hjust, vjust = data$vjust,
                  rot = data$angle,
-                 gp = gpar(
+                 gp = grid::gpar(
                      col = alpha(data$colour, data$alpha),
                      fontsize = data$size * .pt,
                      fontfamily = data$family,
