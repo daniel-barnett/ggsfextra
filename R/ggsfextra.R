@@ -1,3 +1,3 @@
-#' importFrom ggplot2 "ggproto"
+#' @import ggplot2
 
 NULL

@@ -6,11 +6,11 @@ Date: 2018-01-15
 Authors@R: c(person("Daniel", "Barnett", role = c("cre", "aut"),
                     email = "dbar344@aucklanduni.ac.nz"))
 Depends:
-    R (>= 3.0),
-	ggplot2 (>= 2.2.1.9000)
+    R (>= 3.3)
 Imports:
   sf,
-  ggplot2 (>= 2.2.1.9000)
+  ggplot2 (>= 2.2.1.9000),
+  scales
 Description: Additonal ggplot2 layers for sf objects including sparklines and region names.
 License: GPL-3 | file LICENSE
 RoxygenNote: 6.0.1.9000
