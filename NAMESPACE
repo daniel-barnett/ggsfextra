@@ -2,5 +2,6 @@
 
 S3method(scale_type,sfc)
 export(geom_categorical)
+export(geom_sftext)
 export(geom_sparkline)
 import(ggplot2)
