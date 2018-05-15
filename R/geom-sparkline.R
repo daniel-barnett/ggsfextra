@@ -53,8 +53,7 @@ GeomSparkLine <- ggproto("GeomSf", Geom,
                               fill_alpha = NA,
                               stroke = 0.5,
                               plot_size = 1,
-                              relative = FALSE,
-                              pctchange = FALSE,
+                              sparkline_type = "Absolute",
                               relative_start = 1,
                               confint = FALSE,
                               up.to = NULL
@@ -74,13 +73,12 @@ GeomSparkLine <- ggproto("GeomSf", Geom,
                               coord$line_x <- (coord$line_x - x.rng[1]) / (x.rng[2] - x.rng[1])
                               coord$line_y <- (coord$line_y - y.rng[1]) / (y.rng[2] - y.rng[1])
 
-                              relative <- coord$relative[1]
-                              pctchange <- coord$pctchange[1]
+                              sparkline_type <- coord$sparkline_type[1]
                               up.to <- coord$up.to[1]
                               relative_start <- coord$relative_start[1]
-                              if (relative) {
+                              if (sparkline_type == "Relative") {
                                   coord$line_y <- unlist(tapply(coord$line_y, coord$group, function(x) x - x[relative_start]))
-                              } else if (pctchange) {
+                              } else if (sparkline_type == "Percent Change") {
                                   coord$line_y <- unlist(tapply(coord$line_y, coord$group, function(x) {
                                       x.lagged <- c(x[1], x[-length(x)])
                                       (x - x.lagged) / x.lagged}))
