@@ -108,6 +108,7 @@ GeomSparkLine <- ggproto("GeomSf", Geom,
                                                                      boxes = curr.pos[, 3:6, drop = FALSE],
                                                                      xlim = c(0, 1),
                                                                      ylim = c(0, 1),
+                                                                     hjust = 0, vjust = 0,
                                                                      direction = "both"))
 
                               ## Viewport of each line graph
@@ -279,7 +280,7 @@ GeomConfInt <- ggproto("GeomConfInt", Geom,
                                            "group"),
                           default_aes = aes(
                               shape = NULL,
-                              colour = NULL,
+                              colour = "black",
                               fill = NULL,
                               size = NULL,
                               linetype = 1,

@@ -1,8 +1,8 @@
 Package: ggsfextra
 Type: Package
 Title: Extra ggplots for sf objects
-Version: 0.3-0
-Date: 2018-01-15
+Version: 0.4-0
+Date: 2018-08-17
 Authors@R: c(person("Daniel", "Barnett", role = c("cre", "aut"),
                     email = "dbar344@aucklanduni.ac.nz"))
 Depends:
@@ -10,6 +10,7 @@ Depends:
 Imports:
   sf,
   ggplot2 (>= 2.2.1.9000),
+  ggrepel,
   scales
 Description: Additonal ggplot2 layers for sf objects including sparklines and region names.
 License: GPL-3 | file LICENSE
